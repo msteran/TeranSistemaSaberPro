@@ -1,11 +1,21 @@
 # Etapa de construcción
-FROM maven:3.9.4-eclipse-temurin-17 AS builder
-WORKDIR /build
-COPY . .
-RUN mvn clean package -DskipTests
-
-# Etapa de runtime
-FROM eclipse-temurin:17-jre
+FROM openjdk:8 AS builder
 WORKDIR /app
-COPY --from=builder /build/target/Teran_SistemaExamenesSaberPro.jar app.jar
+
+# Instalar ANT
+RUN apt-get update && apt-get install -y ant
+
+# Copiar el proyecto completo
+COPY . .
+
+# Ejecutar ANT para generar el JAR
+RUN ant clean jar
+
+# Etapa final (runtime)
+FROM openjdk:8-jre
+WORKDIR /app
+
+# Copiar el jar generado
+COPY --from=builder /app/dist/*.jar app.jar
+
 CMD ["java", "-jar", "app.jar"]
